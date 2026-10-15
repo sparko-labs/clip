@@ -6,6 +6,7 @@
 	"main": "index.js",
 	"scripts": {
 		"db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+		"db:generate:fork": "drizzle-kit generate --config=fork/drizzle.config.ts",
 		"db:push": "drizzle-kit push --config=drizzle.config.ts",
 		"db:check": "drizzle-kit check:mysql --config=drizzle.config.ts",
 		"db:up": "drizzle-kit up:mysql --config=drizzle.config.ts",
@@ -58,11 +59,14 @@
 	},
 	"exports": {
 		".": "./index.ts",
+		"./auth/access": "./auth/access.ts",
 		"./auth/auth-options": "./auth/auth-options.ts",
 		"./auth/domain-utils": "./auth/domain-utils.ts",
+		"./auth/oidc": "./auth/oidc.ts",
 		"./auth/session": "./auth/session.ts",
 		"./auth/sso": "./auth/sso.ts",
 		"./auth/sso-state": "./auth/sso-state.ts",
+		"./fork/schema": "./fork/schema.ts",
 		"./schema": "./schema.ts",
 		"./video-sharing-default": "./video-sharing-default.ts",
 		"./loops/*": "./loops/*.ts",
@@ -76,9 +80,12 @@
 	"publishConfig": {
 		"exports": {
 			".": "./dist/index.js",
+			"./auth/access": "./dist/auth/access.js",
 			"./auth/auth-options": "./dist/auth/auth-options.js",
 			"./auth/domain-utils": "./dist/auth/domain-utils.js",
+			"./auth/oidc": "./dist/auth/oidc.js",
 			"./auth/session": "./dist/auth/session.js",
+			"./fork/schema": "./dist/fork/schema.js",
 			"./schema": "./dist/schema.js",
 			"./crypto": "./dist/crypto.js",
 			"./helpers": "./dist/helpers.js"

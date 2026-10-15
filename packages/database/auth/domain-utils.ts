@@ -19,13 +19,32 @@ export function isEmailAllowedForSignup(
 	return allowedDomains.includes(emailDomain.toLowerCase());
 }
 
+export function isOidcMode(): boolean {
+	return serverEnv().AUTH_MODE === "oidc";
+}
+
+/**
+ * In oidc mode only emails on OIDC_ALLOWED_EMAIL_DOMAINS belong to the
+ * directory. A missing or unusable allowlist admits nobody.
+ */
+export function isEmailOutsideDirectory(
+	email: string | null | undefined,
+): boolean {
+	if (!isOidcMode()) return false;
+	const allowed = serverEnv().OIDC_ALLOWED_EMAIL_DOMAINS;
+	if (!email || !allowed || allowed.trim() === "") return true;
+	return !isEmailAllowedForSignup(email, allowed);
+}
+
 /**
  * Whether an account email is refused everywhere: sign-in, existing sessions,
- * and API keys. Reads CAP_BLOCKED_SIGNUP_DOMAINS.
+ * and API keys. Reads CAP_BLOCKED_SIGNUP_DOMAINS and, in oidc mode, the
+ * directory allowlist.
  */
 export function isBlockedAccountEmail(
 	email: string | null | undefined,
 ): boolean {
+	if (isEmailOutsideDirectory(email)) return true;
 	if (!email) return false;
 	return isEmailBlockedFromSignup(
 		email,

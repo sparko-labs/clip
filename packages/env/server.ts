@@ -75,6 +75,42 @@ function createServerEnv() {
 			WORKOS_CLIENT_ID: z.string().optional(),
 			WORKOS_API_KEY: z.string().optional(),
 
+			/// OIDC (single sign-on through an operator-run identity provider)
+			AUTH_MODE: z
+				.union([z.literal("legacy"), z.literal("oidc")])
+				.optional()
+				.default("legacy")
+				.describe(
+					"'legacy' keeps upstream sign-in; 'oidc' makes the OIDC provider the only way in",
+				),
+			OIDC_ISSUER: z.string().optional().describe("OIDC issuer URL"),
+			OIDC_CLIENT_ID: z.string().optional(),
+			OIDC_CLIENT_SECRET: z.string().optional(),
+			OIDC_SCOPES: z
+				.string()
+				.optional()
+				.default("openid profile email")
+				.describe("Space-separated scopes requested from the issuer"),
+			OIDC_PROVIDER_NAME: z
+				.string()
+				.optional()
+				.describe("Display name of the OIDC provider"),
+			OIDC_LINK_BY_EMAIL: boolString(false).describe(
+				"Attach OIDC identities to existing users with the same verified email",
+			),
+			OIDC_ALLOWED_EMAIL_DOMAINS: z
+				.string()
+				.optional()
+				.describe(
+					"Comma-separated email domains admitted in oidc mode. Required there; empty refuses everyone",
+				),
+			SCIM_BEARER_TOKEN: z
+				.string()
+				.optional()
+				.describe(
+					"Bearer token the identity provider presents to the SCIM deprovisioning endpoint. Unset disables the endpoint",
+				),
+
 			/// Settings
 			CAP_VIDEOS_DEFAULT_PUBLIC: boolString(true).describe(
 				"Should videos be public or private by default",

@@ -1,5 +1,7 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { db } from "@cap/database";
+import { isOidcMode } from "@cap/database/auth/domain-utils";
 import { DrizzleQueryError } from "drizzle-orm";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 
@@ -9,6 +11,20 @@ import { runSpaceMemberRoleBackfill } from "./migrations/space_member_role_backf
 async function runMigrate() {
 	await migrate(db(), {
 		migrationsFolder: path.join(process.cwd(), "/migrations"),
+	});
+}
+
+async function runForkMigrate() {
+	const migrationsFolder = ["fork-migrations", "fork/migrations"]
+		.map((folder) => path.join(process.cwd(), folder))
+		.find((folder) => existsSync(folder));
+	if (!migrationsFolder) {
+		if (isOidcMode()) throw new Error("fork migrations folder not found");
+		return;
+	}
+	await migrate(db(), {
+		migrationsFolder,
+		migrationsTable: "__fork_migrations",
 	});
 }
 
@@ -43,4 +59,6 @@ export async function migrateDb() {
 	}
 
 	await runSpaceMemberRoleBackfill();
+
+	await runForkMigrate();
 }

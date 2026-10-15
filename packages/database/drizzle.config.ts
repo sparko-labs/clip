@@ -14,5 +14,5 @@ export default {
 	dialect: "mysql",
 	dbCredentials: { url: URL },
 	casing: "snake_case",
-	tablesFilter: ["*", "!cluster_*"],
+	tablesFilter: ["*", "!cluster_*", "!fork_*", "!__fork_migrations"],
 } satisfies Config;

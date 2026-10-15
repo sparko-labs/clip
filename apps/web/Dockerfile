@@ -12,7 +12,8 @@ COPY . .
 RUN --mount=type=cache,id=bun-1.4.0,target=/root/.bun/install/cache bun install --frozen-lockfile
 
 ARG NEXT_PUBLIC_DOCKER_BUILD=true
-ENV NEXT_PUBLIC_WEB_URL=http://localhost:3000
+ARG NEXT_PUBLIC_WEB_URL=http://localhost:3000
+ENV NEXT_PUBLIC_WEB_URL=${NEXT_PUBLIC_WEB_URL}
 
 RUN bun run build:web
 
@@ -31,6 +32,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 COPY --from=builder --chown=nextjs:nodejs /app/packages/database/migrations ./apps/web/migrations
+COPY --from=builder --chown=nextjs:nodejs /app/packages/database/fork/migrations ./apps/web/fork-migrations
 
 
 USER nextjs
