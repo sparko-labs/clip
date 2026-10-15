@@ -20,14 +20,14 @@ async function fixture(layout) {
 }
 
 const urlFor = githubReleaseUrl({
-	repository: "SparkoSol/clip",
+	repository: "sparko-labs/clip",
 	tag: "desktop-v0.6.2",
 });
 
 test("release urls point at the tag's assets", () => {
 	assert.equal(
 		urlFor({ file: "ClipSpark_0.6.2_x64-setup.exe" }),
-		"https://github.com/SparkoSol/clip/releases/download/desktop-v0.6.2/ClipSpark_0.6.2_x64-setup.exe",
+		"https://github.com/sparko-labs/clip/releases/download/desktop-v0.6.2/ClipSpark_0.6.2_x64-setup.exe",
 	);
 });
 
@@ -50,11 +50,11 @@ test("the manifest lists one signed artifact per updater platform", async () => 
 		notes: "Fixes",
 		platforms: {
 			"darwin-aarch64": {
-				url: "https://github.com/SparkoSol/clip/releases/download/desktop-v0.6.2/App.app.tar.gz",
+				url: "https://github.com/sparko-labs/clip/releases/download/desktop-v0.6.2/App.app.tar.gz",
 				signature: "sig-mac",
 			},
 			"windows-x86_64": {
-				url: "https://github.com/SparkoSol/clip/releases/download/desktop-v0.6.2/App_0.6.2_x64-setup.exe",
+				url: "https://github.com/sparko-labs/clip/releases/download/desktop-v0.6.2/App_0.6.2_x64-setup.exe",
 				signature: "sig-win",
 			},
 		},

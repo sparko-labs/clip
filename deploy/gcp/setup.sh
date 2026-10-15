@@ -14,7 +14,7 @@ set -euo pipefail
 
 PROJECT_ID="${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}"
 REPOSITORY="${REPOSITORY:-clip}"
-GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-SparkoSol/clip}"
+GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-sparko-labs/clip}"
 POOL_ID="${POOL_ID:-github}"
 PROVIDER_ID="${PROVIDER_ID:-clip-github}"
 SERVICE_ACCOUNT_ID="${SERVICE_ACCOUNT_ID:-clip-github-push}"

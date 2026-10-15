@@ -9,7 +9,7 @@ directory. Everything else is upstream.
 - Branches: `main` mirrors upstream (fast-forward only). `custom` holds our
   patches. Sync branches are `sync/<tag>`.
 - Upgrade procedure: `docs/UPGRADING.md`. Deployment: `deploy/`.
-- Hosted on GitHub (`SparkoSol/clip`). CI is GitHub Actions: `.github/workflows/clip-*.yml`.
+- Hosted on GitHub (`sparko-labs/clip`). CI is GitHub Actions: `.github/workflows/clip-*.yml`.
 
 ## How sign-in is restricted
 
@@ -118,7 +118,7 @@ declare it).
 The desktop release job attaches installers and `manifest.json` to a GitHub
 Release named after the tag (`desktop-vX.Y.Z`). The web app's update route reads
 `DESKTOP_UPDATES_BASE_URL`, set to
-`https://github.com/SparkoSol/clip/releases/latest/download`.
+`https://github.com/sparko-labs/clip/releases/latest/download`.
 
 ## Files changed in upstream code (keep this short)
 
