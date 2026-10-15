@@ -2,10 +2,14 @@
 # Provisions Google Artifact Registry for the GitHub Actions image pushes and
 # keeps one image version per package.
 #
-#   PROJECT_ID=my-project LOCATION=europe-west1 ./deploy/gcp/setup.sh setup
-#   PROJECT_ID=my-project ./deploy/gcp/setup.sh existing-plan
-#   PROJECT_ID=my-project ./deploy/gcp/setup.sh existing-dry-run
-#   PROJECT_ID=my-project ./deploy/gcp/setup.sh existing-enforce
+#   PROJECT_ID=my-project LOCATION=us-central1 ./deploy/gcp/setup.sh setup
+#
+# Optional: VPS_READER=<service account email> grants that account read access
+# to the new repository so an existing image puller keeps working.
+#
+# To keep only the latest image in repositories that already exist, use
+# deploy/gcp/prune-to-latest.py. It keeps the manifests a tag references, which
+# a plain "most recent version" cleanup policy does not.
 set -euo pipefail
 
 PROJECT_ID="${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}"
@@ -31,12 +35,6 @@ keep_latest_policy() {
 ]
 JSON
 	echo "$file"
-}
-
-docker_repositories() {
-	gcloud artifacts repositories list --project="$PROJECT_ID" \
-		--filter="format=DOCKER" \
-		--format="value(name.basename(),location)"
 }
 
 setup() {
@@ -71,6 +69,13 @@ setup() {
 		--project="$PROJECT_ID" --location="$LOCATION" \
 		--member="serviceAccount:${SERVICE_ACCOUNT}" \
 		--role="roles/artifactregistry.writer" > /dev/null
+
+	if [[ -n "${VPS_READER:-}" ]]; then
+		gcloud artifacts repositories add-iam-policy-binding "$REPOSITORY" \
+			--project="$PROJECT_ID" --location="$LOCATION" \
+			--member="serviceAccount:${VPS_READER}" \
+			--role="roles/artifactregistry.reader" > /dev/null
+	fi
 
 	if ! gcloud iam workload-identity-pools describe "$POOL_ID" \
 		--project="$PROJECT_ID" --location=global > /dev/null 2>&1; then
@@ -108,39 +113,10 @@ Images will be at ${LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/{web,me
 OUT
 }
 
-existing_plan() {
-	local found=0 name location
-	while read -r name location; do
-		[[ -n "$name" ]] || continue
-		found=1
-		echo "== ${location}/${name}"
-		gcloud artifacts docker images list \
-			"${location}-docker.pkg.dev/${PROJECT_ID}/${name}" \
-			--include-tags --format="value(package)" 2>/dev/null \
-			| sort | uniq -c | awk '{ printf "   %3d version(s) of %s -> %d would be deleted\n", $1, $2, ($1 > 1 ? $1 - 1 : 0) }'
-	done < <(docker_repositories)
-	[[ "$found" -eq 1 ]] || echo "No Docker repositories in ${PROJECT_ID}."
-}
-
-existing_apply() {
-	local mode="$1" name location policy
-	policy="$(keep_latest_policy)"
-	while read -r name location; do
-		[[ -n "$name" ]] || continue
-		echo "== ${location}/${name} (${mode})"
-		gcloud artifacts repositories set-cleanup-policies "$name" \
-			--project="$PROJECT_ID" --location="$location" --policy="$policy" \
-			"--${mode}"
-	done < <(docker_repositories)
-}
-
 case "${1:-}" in
 	setup) setup ;;
-	existing-plan) existing_plan ;;
-	existing-dry-run) existing_apply dry-run ;;
-	existing-enforce) existing_apply no-dry-run ;;
 	*)
-		echo "Usage: $0 {setup|existing-plan|existing-dry-run|existing-enforce}" >&2
+		echo "Usage: $0 setup" >&2
 		exit 1
 		;;
 esac

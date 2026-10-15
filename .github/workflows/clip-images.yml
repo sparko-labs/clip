@@ -50,6 +50,8 @@ jobs:
           file: apps/web/Dockerfile
           platforms: linux/amd64
           push: true
+          provenance: false
+          sbom: false
           build-args: |
             NEXT_PUBLIC_WEB_URL=${{ env.WEB_URL }}
             NEXT_PUBLIC_BRAND_NAME=${{ env.BRAND_NAME }}
@@ -67,6 +69,8 @@ jobs:
           file: apps/media-server/Dockerfile.standalone
           platforms: linux/amd64
           push: true
+          provenance: false
+          sbom: false
           tags: |
             ${{ env.REGISTRY }}/media-server:latest
             ${{ env.REGISTRY }}/media-server:${{ github.sha }}
