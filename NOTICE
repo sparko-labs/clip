@@ -1,0 +1,6 @@
+This product is based on Cap (https://github.com/CapSoftware/Cap), which is
+licensed under the GNU Affero General Public License v3.0. The cap-camera* and
+scap-* crates are licensed under the MIT License. See LICENSE and licenses/.
+
+The corresponding source for this product is available to its users from the
+repository it is distributed from.
