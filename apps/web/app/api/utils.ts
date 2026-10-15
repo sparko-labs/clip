@@ -1,4 +1,5 @@
 import { db } from "@cap/database";
+import { isUserAccessDisabled } from "@cap/database/auth/access";
 import { isBlockedAccountEmail } from "@cap/database/auth/domain-utils";
 import { getCurrentUser } from "@cap/database/auth/session";
 import {
@@ -81,6 +82,7 @@ async function getAuth(c: Context) {
 			.where(eq(authApiKeys.id, authHeader));
 		user = res[0]?.users;
 		if (user && isBlockedAccountEmail(user.email)) user = undefined;
+		if (user && (await isUserAccessDisabled(user.id))) user = undefined;
 	} else {
 		user = await getCurrentUser();
 	}

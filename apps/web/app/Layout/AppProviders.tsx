@@ -1,3 +1,4 @@
+import { isOidcMode } from "@cap/database/auth/domain-utils";
 import { buildEnv, serverEnv } from "@cap/env";
 import { STRIPE_PLAN_IDS } from "@cap/utils";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -28,6 +29,9 @@ export async function AppProviders({ children }: PropsWithChildren) {
 								webUrl: buildEnv.NEXT_PUBLIC_WEB_URL,
 								workosAuthAvailable: !!serverEnv().WORKOS_CLIENT_ID,
 								googleAuthAvailable: !!serverEnv().GOOGLE_CLIENT_ID,
+								oidcAuthAvailable: isOidcMode(),
+								oidcProviderName:
+									serverEnv().OIDC_PROVIDER_NAME ?? "single sign-on",
 							}}
 						>
 							<ReactQueryProvider>

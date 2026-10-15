@@ -1,6 +1,7 @@
 import "server-only";
 
 import { db } from "@cap/database";
+import { isEmailOutsideDirectory } from "@cap/database/auth/domain-utils";
 import { nanoId } from "@cap/database/helpers";
 import { enqueueLoopsSync } from "@cap/database/loops/queue";
 import {
@@ -39,6 +40,9 @@ export async function provisionOrganizationInvitee({
 	role: ProvisionOrganizationRole;
 }) {
 	const normalizedEmail = email.trim().toLowerCase();
+	if (isEmailOutsideDirectory(normalizedEmail)) {
+		throw new Error(`${normalizedEmail} is not part of this directory`);
+	}
 
 	return db().transaction(async (tx) => {
 		const [existingUser] = await tx

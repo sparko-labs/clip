@@ -1,6 +1,9 @@
 import crypto from "node:crypto";
 import { authOptions } from "@cap/database/auth/auth-options";
-import { isEmailAllowedForSignup } from "@cap/database/auth/domain-utils";
+import {
+	isEmailAllowedForSignup,
+	isOidcMode,
+} from "@cap/database/auth/domain-utils";
 import { hashPassword } from "@cap/database/crypto";
 import { sendEmail } from "@cap/database/emails/config";
 import { OTPEmail } from "@cap/database/emails/otp-email";
@@ -407,6 +410,10 @@ const ensureEmailSignInAllowed = Effect.fn("Mobile.ensureEmailSignInAllowed")(
 	function* (email: string) {
 		if (!emailPattern.test(email)) {
 			return yield* Effect.fail(new HttpApiError.BadRequest());
+		}
+
+		if (isOidcMode()) {
+			return yield* Effect.fail(new HttpApiError.Forbidden());
 		}
 
 		const allowedDomains = serverEnv().CAP_ALLOWED_SIGNUP_DOMAINS;
@@ -2769,13 +2776,19 @@ const ApiLive = HttpApiBuilder.api(Mobile.MobileApiContract).pipe(
 				return handlers
 					.handle("getAuthConfig", () =>
 						Effect.succeed({
-							appleAuthAvailable: Boolean(
-								serverEnv().APPLE_CLIENT_ID && serverEnv().APPLE_CLIENT_SECRET,
-							),
-							googleAuthAvailable: Boolean(serverEnv().GOOGLE_CLIENT_ID),
-							workosAuthAvailable: Boolean(
-								serverEnv().WORKOS_CLIENT_ID && serverEnv().WORKOS_API_KEY,
-							),
+							appleAuthAvailable:
+								!isOidcMode() &&
+								Boolean(
+									serverEnv().APPLE_CLIENT_ID &&
+										serverEnv().APPLE_CLIENT_SECRET,
+								),
+							googleAuthAvailable:
+								!isOidcMode() && Boolean(serverEnv().GOOGLE_CLIENT_ID),
+							workosAuthAvailable:
+								!isOidcMode() &&
+								Boolean(
+									serverEnv().WORKOS_CLIENT_ID && serverEnv().WORKOS_API_KEY,
+								),
 						}),
 					)
 					.handle("requestSession", ({ request, urlParams }) =>

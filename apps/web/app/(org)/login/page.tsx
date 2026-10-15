@@ -1,3 +1,4 @@
+import { isOidcMode } from "@cap/database/auth/domain-utils";
 import { getCurrentUser } from "@cap/database/auth/session";
 import { serverEnv } from "@cap/env";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
@@ -6,6 +7,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSafeNextPath } from "../safe-next";
 import { LoginForm } from "./form";
+import { OidcSignIn } from "./oidc-sign-in";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +46,18 @@ export default async function LoginPage(props: {
 
 	if (session && !isSsoEntry) {
 		redirect(getSafeNextPath(searchParams.next, serverEnv().WEB_URL));
+	}
+
+	if (isOidcMode()) {
+		return (
+			<div className="flex relative justify-center items-center w-full h-screen bg-gray-2">
+				<OidcSignIn
+					callbackUrl={getSafeNextPath(searchParams.next, serverEnv().WEB_URL)}
+					error={error}
+					providerName={serverEnv().OIDC_PROVIDER_NAME ?? "single sign-on"}
+				/>
+			</div>
+		);
 	}
 
 	return (

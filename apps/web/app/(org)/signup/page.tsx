@@ -1,3 +1,4 @@
+import { isOidcMode } from "@cap/database/auth/domain-utils";
 import { getCurrentUser } from "@cap/database/auth/session";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -21,6 +22,12 @@ export default async function SignupPage(props: {
 		props.searchParams,
 		getCurrentUser(),
 	]);
+	if (isOidcMode()) {
+		const next = Array.isArray(searchParams.next)
+			? searchParams.next[0]
+			: searchParams.next;
+		redirect(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
+	}
 	const [organizationId, connectionId, mobileProvider, sso, error] = [
 		searchParams.organizationId,
 		searchParams.connection_id,

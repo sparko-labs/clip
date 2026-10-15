@@ -14,12 +14,15 @@ import WorkOSProvider from "next-auth/providers/workos";
 import { sendEmail } from "../emails/config.ts";
 import { db } from "../index.ts";
 import { users } from "../schema.ts";
+import { evaluateOidcIdentity, isUserAccessDisabled } from "./access.ts";
 import {
 	isBlockedAccountEmail,
 	isEmailAllowedForSignup,
 	isEmailBlockedFromSignup,
+	isOidcMode,
 } from "./domain-utils.ts";
 import { DrizzleAdapter } from "./drizzle-adapter.ts";
+import { OIDC_PROVIDER_ID, type OidcProfile, oidcProvider } from "./oidc.ts";
 import {
 	provisionSsoMembership,
 	type SsoAuthContext,
@@ -51,6 +54,7 @@ export async function decodeSessionToken(
 		.limit(1);
 
 	if (!user) return null;
+	if (await isUserAccessDisabled(userId)) return null;
 
 	const sessionVersion =
 		typeof token.sessionVersion === "number" ? token.sessionVersion : 0;
@@ -88,6 +92,10 @@ export const authOptions = (ssoContext?: SsoAuthContext): NextAuthOptions => {
 		},
 		get providers() {
 			if (_providers) return _providers;
+			if (isOidcMode()) {
+				_providers = [oidcProvider()];
+				return _providers;
+			}
 			const appleClientId = serverEnv().APPLE_CLIENT_ID;
 			const appleClientSecret = serverEnv().APPLE_CLIENT_SECRET;
 			_providers = [
@@ -210,6 +218,25 @@ export const authOptions = (ssoContext?: SsoAuthContext): NextAuthOptions => {
 		},
 		callbacks: {
 			async signIn({ user, email, credentials, account, profile }) {
+				if (isOidcMode()) {
+					if (account?.provider !== OIDC_PROVIDER_ID) return false;
+					const rejection = evaluateOidcIdentity({
+						email: user?.email,
+						emailVerified: (profile as Partial<OidcProfile> | undefined)
+							?.email_verified,
+					});
+					if (rejection) {
+						console.warn(`OIDC sign-in rejected: ${rejection}`);
+						return `/login?error=${rejection}`;
+					}
+					const [existing] = await db()
+						.select({ id: users.id })
+						.from(users)
+						.where(eq(users.email, (user.email as string).toLowerCase()))
+						.limit(1);
+					if (existing && (await isUserAccessDisabled(existing.id)))
+						return "/login?error=OidcAccessDisabled";
+				}
 				if (account?.provider === "workos") {
 					validatedSsoIdentity = null;
 					try {

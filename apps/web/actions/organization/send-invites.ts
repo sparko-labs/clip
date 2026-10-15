@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@cap/database";
+import { isEmailOutsideDirectory } from "@cap/database/auth/domain-utils";
 import { getCurrentUser } from "@cap/database/auth/session";
 import { sendEmail } from "@cap/database/emails/config";
 import { OrganizationInvite } from "@cap/database/emails/organization-invite";
@@ -68,6 +69,9 @@ export async function sendOrganizationInvites(
 			typeof inviteInput === "string" ? inviteInput : inviteInput.email;
 		const normalizedEmail = email.trim().toLowerCase();
 		if (!emailRegex.test(normalizedEmail)) continue;
+		if (isEmailOutsideDirectory(normalizedEmail)) {
+			throw new Error(`${normalizedEmail} is not part of this directory`);
+		}
 
 		const inviteRole =
 			typeof inviteInput === "string" || !inviteInput.role

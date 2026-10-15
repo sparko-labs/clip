@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@cap/database";
+import { isOidcMode } from "@cap/database/auth/domain-utils";
 import { getCurrentUser } from "@cap/database/auth/session";
 import {
 	getRegisteredSsoOrganization,
@@ -28,6 +29,7 @@ export async function getOrganizationSSOData(
 	connectionId?: string,
 	returnTo?: string,
 ) {
+	if (isOidcMode()) throw new Error("Organization SSO is not available.");
 	if (
 		typeof identifier !== "string" ||
 		identifier.length > 255 ||

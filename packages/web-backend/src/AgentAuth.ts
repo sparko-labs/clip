@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { isUserAccessDisabled } from "@cap/database/auth/access";
 import { isBlockedAccountEmail } from "@cap/database/auth/domain-utils";
 import * as Db from "@cap/database/schema";
 import { Agent } from "@cap/web-domain";
@@ -128,6 +129,8 @@ export const AgentHttpAuthMiddlewareLive = Layer.effect(
 					);
 					if (!row || isBlockedAccountEmail(row.email))
 						return yield* authRequired();
+					if (yield* database.use(() => isUserAccessDisabled(row.id)))
+						return yield* authRequired();
 					if (row.revokedAt || row.expiresAt.getTime() <= Date.now()) {
 						return yield* tokenExpired();
 					}
@@ -182,6 +185,8 @@ export const AgentHttpAuthMiddlewareLive = Layer.effect(
 						.limit(1),
 				);
 				if (!row || isBlockedAccountEmail(row.email))
+					return yield* authRequired();
+				if (yield* database.use(() => isUserAccessDisabled(row.id)))
 					return yield* authRequired();
 				if (!isLegacyAgentKeySource(row.source)) return yield* authRequired();
 

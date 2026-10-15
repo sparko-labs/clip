@@ -2,6 +2,7 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 import { db } from "@cap/database";
+import { isUserAccessDisabled } from "@cap/database/auth/access";
 import { isBlockedAccountEmail } from "@cap/database/auth/domain-utils";
 import { nanoId } from "@cap/database/helpers";
 import {
@@ -335,7 +336,8 @@ export const authenticateMcpBearer = async (authorization: string | null) => {
 		row.revokedAt ||
 		row.accessExpiresAt.getTime() <= Date.now() ||
 		row.resource !== mcpResource() ||
-		isBlockedAccountEmail(row.email)
+		isBlockedAccountEmail(row.email) ||
+		(await isUserAccessDisabled(row.userId))
 	)
 		return null;
 	return { userId: row.userId, clientId: row.clientId };

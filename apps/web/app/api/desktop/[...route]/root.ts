@@ -1,4 +1,5 @@
 import { db } from "@cap/database";
+import { isUserAccessDisabled } from "@cap/database/auth/access";
 import { isBlockedAccountEmail } from "@cap/database/auth/domain-utils";
 import { getCurrentUser } from "@cap/database/auth/session";
 import { sendEmail } from "@cap/database/emails/config";
@@ -99,6 +100,7 @@ async function getDesktopProfileUser(c: Context) {
 	if (authHeader?.length === 36) {
 		const [user] = await db()
 			.select({
+				id: users.id,
 				name: users.name,
 				lastName: users.lastName,
 				email: users.email,
@@ -110,6 +112,7 @@ async function getDesktopProfileUser(c: Context) {
 			.limit(1);
 
 		if (!user || isBlockedAccountEmail(user.email)) return null;
+		if (await isUserAccessDisabled(user.id)) return null;
 		return user;
 	}
 

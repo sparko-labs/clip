@@ -2,6 +2,8 @@ import {
 	authOptions,
 	decodeSessionToken,
 } from "@cap/database/auth/auth-options";
+import { isOidcMode } from "@cap/database/auth/domain-utils";
+import { OIDC_PROVIDER_ID } from "@cap/database/auth/oidc";
 import { getWorkOS } from "@cap/database/auth/sso";
 import {
 	ssoIntentCookie,
@@ -76,6 +78,13 @@ async function handler(
 	context: { params: Promise<{ nextauth: string[] }> },
 ) {
 	const { nextauth } = await context.params;
+	if (
+		isOidcMode() &&
+		(nextauth[0] === "signin" || nextauth[0] === "callback") &&
+		nextauth[1] !== OIDC_PROVIDER_ID
+	) {
+		return new NextResponse(null, { status: 404 });
+	}
 	if (nextauth[1] !== "workos") {
 		return NextAuth(request, context, authOptions());
 	}

@@ -1,4 +1,5 @@
 import { db } from "@cap/database";
+import { isEmailOutsideDirectory } from "@cap/database/auth/domain-utils";
 import { sendEmail } from "@cap/database/emails/config";
 import { PaymentFailed } from "@cap/database/emails/payment-failed";
 import { nanoId } from "@cap/database/helpers";
@@ -286,6 +287,9 @@ async function syncSignedBaaStatus(
 async function createGuestUser(
 	email: string,
 ): Promise<typeof users.$inferSelect> {
+	if (isEmailOutsideDirectory(email)) {
+		throw new Error("Guest checkout is not available for this email");
+	}
 	const userId = User.UserId.make(nanoId());
 
 	await db()

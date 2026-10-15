@@ -1,3 +1,4 @@
+import { isOidcMode } from "@cap/database/auth/domain-utils";
 import { getCurrentUser } from "@cap/database/auth/session";
 import { serverEnv } from "@cap/env";
 import { redirect } from "next/navigation";
@@ -12,6 +13,8 @@ export const metadata = {
 export default async function VerifyOTPPage(props: {
 	searchParams: Promise<{ email?: string; next?: string; lastSent?: string }>;
 }) {
+	if (isOidcMode()) redirect("/login");
+
 	const searchParams = await props.searchParams;
 	const user = await getCurrentUser();
 

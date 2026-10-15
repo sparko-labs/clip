@@ -30,6 +30,36 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
 	const [lastResendTime, setLastResendTime] = useState<number | null>(null);
 
 	const emailId = useId();
+	const { oidcAuthAvailable, oidcProviderName } = usePublicEnv();
+	const rawVideoId = useParams().videoId;
+	const shareVideoId = Array.isArray(rawVideoId) ? rawVideoId[0] : rawVideoId;
+
+	if (oidcAuthAvailable) {
+		return (
+			<Dialog open={isOpen} onOpenChange={onClose}>
+				<DialogContent className="w-[90vw] bg-gray-3 relative sm:max-w-md p-6 rounded-xl">
+					<div className="space-y-6">
+						<LogoBadge className="mx-auto w-auto h-12" />
+						<h1 className="text-xl font-semibold text-center">
+							Sign in to comment
+						</h1>
+						<Button
+							variant="primary"
+							className="w-full"
+							onClick={() =>
+								void signIn("oidc", {
+									callbackUrl: `${window.location.origin}/s/${shareVideoId}`,
+								})
+							}
+						>
+							Sign in with {oidcProviderName}
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
+		);
+	}
+
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
 			<DialogContent className="w-[90vw] bg-gray-3 relative sm:max-w-md p-6 rounded-xl">

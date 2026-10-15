@@ -1,3 +1,4 @@
+import { isUserAccessDisabled } from "@cap/database/auth/access";
 import { getServerSession } from "@cap/database/auth/auth-options";
 import { isBlockedAccountEmail } from "@cap/database/auth/domain-utils";
 import * as Db from "@cap/database/schema";
@@ -88,6 +89,13 @@ export const HttpAuthMiddlewareLive = Layer.effect(
 								),
 							),
 						);
+					const keyUser = Option.getOrNull(user);
+					if (
+						keyUser &&
+						(yield* database.use(() => isUserAccessDisabled(keyUser.id)))
+					) {
+						user = Option.none();
+					}
 				} else {
 					user = yield* getCurrentUser;
 				}
