@@ -3,15 +3,20 @@
 Headless Ubuntu Server LTS. Two registrations on the same machine, both
 project-level, `concurrent = 1` each.
 
-## Docker executor (tag `linux`)
+## Docker executor (no tag)
 
-Web image, media-server image, checks, release publish, upstream sync.
+Web image, media-server image, checks, release publish, upstream sync. These
+jobs carry no runner tag, so a shared runner that accepts untagged jobs runs
+them.
 
-- Install Docker and GitLab Runner.
-- `config.toml` for this runner: `executor = "docker"`, `privileged = false`,
-  `volumes = ["/var/run/docker.sock:/var/run/docker.sock", "/cache"]`. The
-  socket mount lets `docker build` jobs use the host daemon. Anyone who can
-  push to `custom` can run code on this host, so keep the project private.
+- The image jobs use Docker-in-Docker (`docker:27-dind`), which needs a
+  `privileged = true` runner.
+- On a runner that mounts the host socket instead
+  (`volumes = ["/var/run/docker.sock:/var/run/docker.sock", "/cache"]`,
+  `privileged = false`), delete the `services` block and the `DOCKER_HOST` and
+  `DOCKER_TLS_CERTDIR` variables from `.docker-image` in `.gitlab-ci.yml`.
+  Anyone who can push to `custom` can then run code on that host, so keep the
+  project private.
 - Registry: GitLab Container Registry works with the built-in
   `$CI_REGISTRY_*` variables. For Google Artifact Registry set
   `WEB_IMAGE_REGISTRY`, `REGISTRY_HOST` (for example `europe-docker.pkg.dev`),

@@ -16,10 +16,10 @@ variables:
   GIT_DEPTH: "0"
   SIGN_BUILDS: "false"
   BUN_VERSION: "1.4.0"
+  WEB_URL: "https://cap.sparkosol.co"
 
 .node-bun:
   image: node:24-bookworm
-  tags: [linux]
   before_script:
     - npm install --global "bun@${BUN_VERSION}"
     - bun --version
@@ -58,10 +58,20 @@ check:scripts:
 # Set WEB_IMAGE_REGISTRY (and REGISTRY_HOST, REGISTRY_USER, REGISTRY_PASSWORD)
 # to push somewhere other than the GitLab Container Registry, for example a
 # Google Artifact Registry repository.
+#
+# The Linux jobs have no runner tag, so any runner that takes untagged jobs
+# (a shared runner) picks them up. The image jobs use Docker-in-Docker, which
+# needs a privileged runner. On a runner that mounts /var/run/docker.sock
+# instead, delete the services block and the DOCKER_HOST/DOCKER_TLS_CERTDIR
+# variables below.
 
 .docker-image:
   image: docker:27-cli
-  tags: [linux]
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   stage: build
   interruptible: false
   rules:
@@ -160,7 +170,6 @@ build:desktop-linux:
 release:publish:
   stage: release
   image: oven/bun:1.4.0
-  tags: [linux]
   interruptible: false
   needs:
     - job: build:desktop-macos
@@ -188,7 +197,6 @@ release:publish:
 sync:upstream:
   stage: sync
   image: alpine:3.20
-  tags: [linux]
   interruptible: false
   before_script:
     - apk add --no-cache git bash curl

@@ -84,7 +84,7 @@ follows `/api/desktop/plan`.
 
 | Variable | Notes |
 |---|---|
-| `WEB_URL` | production web URL, no trailing slash |
+| `WEB_URL` | production web URL, no trailing slash; defaults to `https://cap.sparkosol.co` in `.gitlab-ci.yml` |
 | `BRAND_NAME`, `BRAND_IDENTIFIER`, `URL_SCHEME` | product name, `com.company.app`, deep link scheme |
 | `UPDATER_PUBLIC_KEY` | public half of `bunx tauri signer generate` (base64 as printed) |
 | `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | masked, protected |
