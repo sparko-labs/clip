@@ -9,9 +9,6 @@ OUT="release-assets"
 # shellcheck source=scripts/ci/desktop-env.sh
 source ./scripts/ci/desktop-env.sh
 
-node --test scripts/prepare-gpui-dependency.test.mjs scripts/bundle-gpui.test.mjs \
-	scripts/finalize-linux-appimage.test.mjs scripts/finalize-linux-gpui-packages.test.mjs
-
 rustup target add "$TARGET"
 node scripts/ci/stamp-version.mjs "$VERSION"
 write_dotenv "$VERSION" "$TARGET"

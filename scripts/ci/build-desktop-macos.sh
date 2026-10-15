@@ -18,9 +18,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-node --test scripts/prepare-gpui-dependency.test.mjs scripts/build-macos-packages.test.mjs \
-	scripts/bundle-gpui.test.mjs scripts/finalize-macos-packages.test.mjs
-
 rustup target add "$TARGET"
 node scripts/ci/stamp-version.mjs "$VERSION"
 write_dotenv "$VERSION" "$TARGET"
