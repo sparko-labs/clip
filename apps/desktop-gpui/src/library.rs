@@ -897,7 +897,10 @@ fn thumbnail_cache_dir() -> PathBuf {
     }
     dirs::cache_dir().map_or_else(
         || crate::store::app_data_dir().join("thumbnail-cache"),
-        |base| base.join("so.cap.desktop.gpui").join("thumbnails"),
+        |base| {
+            base.join(format!("{}.gpui", crate::branding::APP_IDENTIFIER))
+                .join("thumbnails")
+        },
     )
 }
 

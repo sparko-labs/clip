@@ -90,7 +90,7 @@ pub fn is_parakeet_model(model: &str) -> bool {
 fn app_local_data_dir() -> PathBuf {
     dirs::data_local_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("so.cap.desktop")
+        .join(crate::branding::APP_IDENTIFIER)
 }
 
 pub fn models_dir() -> PathBuf {

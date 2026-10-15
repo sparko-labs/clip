@@ -26,8 +26,41 @@ export function targetPlatform(target) {
 	return null;
 }
 
-export function mainBinaryName(target) {
-	return targetPlatform(target) === "win32" ? "Cap.exe" : "Cap";
+export function brandName(env = process.env) {
+	return env.CAP_BRAND_NAME || "Cap";
+}
+
+export function mainBinaryName(target, env = process.env) {
+	const name = brandName(env);
+	return targetPlatform(target) === "win32" ? `${name}.exe` : name;
+}
+
+export function brandConfig(env = process.env) {
+	const config = {};
+	if (env.CAP_BRAND_NAME) {
+		config.productName = env.CAP_BRAND_NAME;
+		config.mainBinaryName = env.CAP_BRAND_NAME;
+	}
+	if (env.CAP_BRAND_IDENTIFIER) config.identifier = env.CAP_BRAND_IDENTIFIER;
+	if (env.CAP_BRAND_DESCRIPTION) {
+		config.bundle = { longDescription: env.CAP_BRAND_DESCRIPTION };
+	}
+	const updater = {};
+	if (env.CAP_UPDATE_ENDPOINT) {
+		updater.endpoints = [
+			`${env.CAP_UPDATE_ENDPOINT.replace(/\/+$/, "")}/{{target}}/{{current_version}}`,
+		];
+	}
+	if (env.CAP_UPDATER_PUBLIC_KEY) updater.pubkey = env.CAP_UPDATER_PUBLIC_KEY;
+	const plugins = {};
+	if (Object.keys(updater).length > 0) plugins.updater = updater;
+	if (env.CAP_BRAND_URL_SCHEME) {
+		plugins["deep-link"] = {
+			desktop: { schemes: [env.CAP_BRAND_URL_SCHEME] },
+		};
+	}
+	if (Object.keys(plugins).length > 0) config.plugins = plugins;
+	return config;
 }
 
 export function gpuiBinaryPath(target, profile = "release") {
@@ -72,10 +105,14 @@ export function bundleArguments(target, args) {
 }
 
 export function bundleEnvironment(env) {
+	const brand = brandConfig(env);
 	return {
 		...env,
 		TAURI_APP_PATH: gpuiDirectory,
 		RUSTUP_TOOLCHAIN: gpuiToolchain,
+		...(Object.keys(brand).length > 0
+			? { TAURI_CONFIG: JSON.stringify(brand) }
+			: {}),
 	};
 }
 

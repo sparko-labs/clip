@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import {
+	brandConfig,
 	bundleArguments,
 	bundleEnvironment,
 	gpuiBinaryPath,
@@ -49,16 +50,11 @@ test("the GPUI app keeps the identity every existing install updates into", () =
 	assert.deepEqual(gpuiConfig.plugins.updater.endpoints, [
 		"https://cdn.crabnebula.app/update/cap/cap/{{target}}/{{current_version}}",
 	]);
-	const installer = readFileSync(
-		new URL("../apps/desktop-gpui/src/installer.rs", import.meta.url),
+	const branding = readFileSync(
+		new URL("../apps/desktop-gpui/src/branding.rs", import.meta.url),
 		"utf8",
 	);
-	assert.match(
-		installer,
-		new RegExp(
-			`const UPDATER_PUBLIC_KEY: &str = "${gpuiConfig.plugins.updater.pubkey}";`,
-		),
-	);
+	assert.ok(branding.includes(`"${gpuiConfig.plugins.updater.pubkey}"`));
 	assert.deepEqual(
 		gpuiConfig.plugins["deep-link"],
 		tauriConfig.plugins["deep-link"],
@@ -172,4 +168,39 @@ test("signing builds can stop before bundling and rebundle without rebuilding", 
 		noBundle: false,
 		bundleArgs: ["--bundles", "nsis"],
 	});
+});
+
+test("brand variables overlay the packaging identity without touching the base config", () => {
+	assert.deepEqual(brandConfig({}), {});
+	assert.equal(mainBinaryName("x86_64-pc-windows-msvc", {}), "Cap.exe");
+	const env = {
+		CAP_BRAND_NAME: "Acme Recorder",
+		CAP_BRAND_IDENTIFIER: "com.acme.recorder",
+		CAP_BRAND_URL_SCHEME: "acme-recorder",
+		CAP_UPDATE_ENDPOINT: "https://cap.acme.example/api/desktop-updates/",
+		CAP_UPDATER_PUBLIC_KEY: "key",
+	};
+	assert.equal(
+		mainBinaryName("x86_64-pc-windows-msvc", env),
+		"Acme Recorder.exe",
+	);
+	assert.deepEqual(brandConfig(env), {
+		productName: "Acme Recorder",
+		mainBinaryName: "Acme Recorder",
+		identifier: "com.acme.recorder",
+		plugins: {
+			updater: {
+				endpoints: [
+					"https://cap.acme.example/api/desktop-updates/{{target}}/{{current_version}}",
+				],
+				pubkey: "key",
+			},
+			"deep-link": { desktop: { schemes: ["acme-recorder"] } },
+		},
+	});
+	assert.deepEqual(
+		JSON.parse(bundleEnvironment(env).TAURI_CONFIG),
+		brandConfig(env),
+	);
+	assert.equal("TAURI_CONFIG" in bundleEnvironment({ PATH: "/bin" }), false);
 });

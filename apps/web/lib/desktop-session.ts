@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { brandName } from "@/lib/brand";
 
 // The desktop app supplies `port` from tauri-plugin-oauth's local callback
 // server, which is always a numeric loopback port. Constraining it to an integer
@@ -55,6 +56,7 @@ export function createDesktopRedirectPage(
 ) {
 	const state = serializeStateForScript({ primaryUrl, fallbackUrl });
 	const fallbackHref = escapeHtmlAttribute(fallbackUrl);
+	const brand = escapeHtmlAttribute(brandName());
 
 	return `<!DOCTYPE html>
 <html lang="en">
@@ -63,7 +65,7 @@ export function createDesktopRedirectPage(
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
 		<meta http-equiv="Pragma" content="no-cache" />
-		<title>Open Cap</title>
+		<title>Open ${brand}</title>
 		<style>
 			:root {
 				color-scheme: light;
@@ -139,10 +141,10 @@ export function createDesktopRedirectPage(
 	</head>
 	<body>
 		<main>
-			<h1>Opening Cap</h1>
-			<p>If Cap does not open automatically, try the button below. Browser fallback will start in a moment.</p>
+			<h1>Opening ${brand}</h1>
+			<p>If ${brand} does not open automatically, try the button below. Browser fallback will start in a moment.</p>
 			<div class="actions">
-				<button id="open-cap" type="button">Open Cap</button>
+				<button id="open-cap" type="button">Open ${brand}</button>
 				<a id="browser-fallback" href="${fallbackHref}">Use browser fallback</a>
 			</div>
 			<p id="status">Trying the desktop app first...</p>
@@ -162,7 +164,7 @@ export function createDesktopRedirectPage(
 			};
 
 			const openCap = () => {
-				status.textContent = "Trying to open the Cap desktop app...";
+				status.textContent = "Trying to open the ${brand} desktop app...";
 				window.location.href = primaryUrl;
 			};
 

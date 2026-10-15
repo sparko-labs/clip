@@ -158,14 +158,15 @@ pub fn app_data_dir() -> PathBuf {
     #[cfg(target_os = "macos")]
     {
         PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| ".".into()))
-            .join("Library/Application Support/so.cap.desktop")
+            .join("Library/Application Support")
+            .join(crate::branding::APP_IDENTIFIER)
     }
     #[cfg(target_os = "windows")]
     {
         std::env::var_os("APPDATA")
             .map(PathBuf::from)
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("so.cap.desktop")
+            .join(crate::branding::APP_IDENTIFIER)
     }
     #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
     {
@@ -175,7 +176,7 @@ pub fn app_data_dir() -> PathBuf {
                 PathBuf::from(std::env::var_os("HOME").unwrap_or_else(|| ".".into()))
                     .join(".local/share")
             });
-        base.join("so.cap.desktop")
+        base.join(crate::branding::APP_IDENTIFIER)
     }
 }
 
@@ -843,7 +844,7 @@ pub fn excluded_windows_to_json(windows: &[WindowExclusion]) -> Value {
 
 /// `https://cap.so` -- `default_server_url()` in `general_settings.rs`, which
 /// is also what `clientEnv.VITE_SERVER_URL` resolves to in a release build.
-pub const DEFAULT_SERVER_URL: &str = "https://cap.so";
+pub const DEFAULT_SERVER_URL: &str = crate::branding::SERVER_URL;
 
 /// `DEFAULT_FILENAME_TEMPLATE` in `src-tauri/src/recording.rs`, spelled the
 /// same way `general.tsx` spells it.

@@ -12,8 +12,8 @@ use serde::Deserialize;
 
 use crate::store::UpdateChannel;
 
-const UPDATE_ENDPOINT: &str = "https://cdn.crabnebula.app/update/cap/cap";
-const UPDATER_PUBLIC_KEY: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUyOTAzOTdFNzJFQkRFOTMKUldTVDN1dHlmam1RNHFXb1VYTXlrQk1iMFFkcjN0YitqZlA5WnZNY0ZtQ1dvM1dxK211M3VIYUQK";
+const UPDATE_ENDPOINT: &str = crate::branding::UPDATE_ENDPOINT;
+const UPDATER_PUBLIC_KEY: &str = crate::branding::UPDATER_PUBLIC_KEY;
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
 const METADATA_TIMEOUT: Duration = Duration::from_secs(20);
 const CHUNK_TIMEOUT: Duration = Duration::from_secs(60);
@@ -252,7 +252,7 @@ fn staging_root() -> PathBuf {
     }
     dirs::cache_dir()
         .unwrap_or_else(std::env::temp_dir)
-        .join("so.cap.desktop")
+        .join(crate::branding::APP_IDENTIFIER)
         .join("updates")
 }
 
@@ -576,7 +576,10 @@ pub(crate) fn install_deb(package: &Path) -> Result<(), String> {
     if status.success() {
         Ok(())
     } else {
-        Err("The package wasn't installed. Approve the system prompt, or install it from cap.so/download.".to_string())
+        Err(format!(
+            "The package wasn't installed. Approve the system prompt, or install it from {}.",
+            crate::branding::DOWNLOAD_URL
+        ))
     }
 }
 

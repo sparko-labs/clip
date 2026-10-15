@@ -483,8 +483,10 @@ fn start_download(release: Release, cx: &mut App) {
 
 fn update_failed(message: &str, cx: &mut App) {
     set_status(UpdateStatus::Idle, cx);
-    let message =
-        format!("{message}\n\nYou can always download the latest version from cap.so/download.");
+    let message = format!(
+        "{message}\n\nYou can always download the latest version from {}.",
+        crate::branding::DOWNLOAD_URL
+    );
     cx.spawn(async move |_| {
         crate::platform::activate_app();
         crate::platform::alert_dialog("Update Cap", &message);

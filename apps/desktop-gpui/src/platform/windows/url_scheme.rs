@@ -10,8 +10,9 @@ pub(super) fn install() {
     std::thread::Builder::new()
         .name("cap-url-scheme".into())
         .spawn(move || {
-            if let Err(error) = claim_url_scheme("cap-desktop", &executable) {
-                tracing::warn!(%error, "could not register the cap-desktop link handler");
+            let scheme = crate::branding::URL_SCHEME;
+            if let Err(error) = claim_url_scheme(scheme, &executable) {
+                tracing::warn!(%error, scheme, "could not register the link handler");
             }
         })
         .ok();
@@ -20,7 +21,7 @@ pub(super) fn install() {
 fn is_installed_executable(executable: &Path) -> bool {
     executable
         .file_name()
-        .is_some_and(|name| name.eq_ignore_ascii_case("Cap.exe"))
+        .is_some_and(|name| name.eq_ignore_ascii_case(crate::branding::EXECUTABLE_NAME))
         && !executable
             .components()
             .any(|component| component.as_os_str() == "target")
@@ -94,7 +95,11 @@ fn claim_url_scheme(scheme: &str, executable: &Path) -> Result<(), String> {
     if read_user_registry_string(&command_key).as_deref() == Some(command.as_str()) {
         return Ok(());
     }
-    write_user_registry_string(&class, None, "URL:so.cap.desktop protocol")?;
+    write_user_registry_string(
+        &class,
+        None,
+        &format!("URL:{} protocol", crate::branding::APP_IDENTIFIER),
+    )?;
     write_user_registry_string(&class, Some("URL Protocol"), "")?;
     write_user_registry_string(
         &format!("{class}\\DefaultIcon"),

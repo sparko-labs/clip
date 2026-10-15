@@ -601,9 +601,7 @@ fn parse_linux_reopen_action(raw: &str) -> std::io::Result<crate::deeplink::Deep
             "Invalid forwarded Cap action URL",
         )
     };
-    if raw.len() > MAX_FORWARDED_DEEP_LINK_BYTES
-        || !(raw.starts_with("cap-desktop://") || raw.starts_with("cap://"))
-    {
+    if raw.len() > MAX_FORWARDED_DEEP_LINK_BYTES || !crate::deeplink::is_action_url(raw) {
         return Err(invalid());
     }
     let url = reqwest::Url::parse(raw).map_err(|_| invalid())?;
@@ -1119,8 +1117,10 @@ fn parse_forwarding_endpoint(contents: &str) -> Option<ForwardingEndpoint> {
 fn is_forwardable_deep_link(url: &str) -> bool {
     !url.is_empty()
         && url.len() <= MAX_FORWARDED_DEEP_LINK_BYTES
-        && reqwest::Url::parse(url)
-            .is_ok_and(|parsed| matches!(parsed.scheme(), "cap-desktop" | "cap"))
+        && reqwest::Url::parse(url).is_ok_and(|parsed| {
+            matches!(parsed.scheme(), "cap-desktop" | "cap")
+                || parsed.scheme() == crate::branding::URL_SCHEME
+        })
 }
 
 #[cfg(any(windows, target_os = "macos", test))]

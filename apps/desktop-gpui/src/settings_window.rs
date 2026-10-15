@@ -1858,7 +1858,7 @@ impl SettingsWindow {
                     .id("settings-previous-versions")
                     .child("View previous versions")
                     .hover(|style| style.text_color(theme.settings_text()))
-                    .on_click(|_, _, cx| cx.open_url("https://cap.so/download/versions")),
+                    .on_click(|_, _, cx| cx.open_url(crate::branding::VERSIONS_URL)),
             )
             .child(
                 div()

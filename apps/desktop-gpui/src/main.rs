@@ -7,6 +7,7 @@ mod app_sounds;
 mod app_windows;
 mod assets;
 mod auth;
+mod branding;
 #[cfg(target_os = "macos")]
 mod camera_bench;
 #[cfg(target_os = "macos")]

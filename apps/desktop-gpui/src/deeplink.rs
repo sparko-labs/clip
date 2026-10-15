@@ -278,13 +278,21 @@ fn submit_action_url(raw: &str) {
     }
 }
 
+pub fn is_action_url(argument: &str) -> bool {
+    argument.starts_with("cap-desktop://")
+        || argument.starts_with("cap://")
+        || argument
+            .strip_prefix(crate::branding::URL_SCHEME)
+            .is_some_and(|rest| rest.starts_with("://"))
+}
+
 /// Wire the executor: scan the initial launch argv for action URLs, then
 /// start the drain task that runs each queued action on the main thread with
 /// a clean borrow. Called once from [`crate::app_windows::init`], after the
 /// window registry the actions dispatch into exists.
 pub fn init(cx: &mut App) {
     for argument in std::env::args().skip(1) {
-        if argument.starts_with("cap-desktop://") || argument.starts_with("cap://") {
+        if is_action_url(&argument) {
             submit_action_url(&argument);
         }
     }

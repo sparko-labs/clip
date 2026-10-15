@@ -6,6 +6,7 @@ import { serverEnv } from "@cap/env";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { getCookie } from "hono/cookie";
+import { desktopUrlScheme } from "@/lib/brand";
 import {
 	buildLoopbackCallbackUrl,
 	createDesktopRedirectPage,
@@ -64,7 +65,7 @@ app.get(
 		const params = new URLSearchParams({ ...data, user_id: user.id });
 		const localhostUrl =
 			port !== undefined ? buildLoopbackCallbackUrl(port, params) : undefined;
-		const deepLinkUrl = `cap-desktop://signin?${params}`;
+		const deepLinkUrl = `${desktopUrlScheme()}://signin?${params}`;
 
 		if (platform === "web" && localhostUrl) {
 			return Response.redirect(localhostUrl);

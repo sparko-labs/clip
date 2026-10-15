@@ -26,9 +26,10 @@ $payloadRoot = Join-Path $signingRoot "payload"
 $manifestPath = Join-Path $signingRoot "payload-manifest.json"
 
 function Get-PayloadDefinitions {
+	$mainExecutable = if ([string]::IsNullOrWhiteSpace($env:CAP_BRAND_EXECUTABLE)) { "Cap.exe" } else { $env:CAP_BRAND_EXECUTABLE }
 	return @(
 		[pscustomobject]@{
-			Name = "Cap.exe"
+			Name = $mainExecutable
 			Path = Join-Path $WorkspaceRoot "apps/desktop-gpui/target/$Target/release/cap-gpui.exe"
 		},
 		[pscustomobject]@{

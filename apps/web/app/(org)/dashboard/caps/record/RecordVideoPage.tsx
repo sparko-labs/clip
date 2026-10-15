@@ -7,6 +7,7 @@ import { ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useId, useRef, useState } from "react";
 import { ChromeRecorderButton } from "@/components/ChromeRecorderButton";
+import { desktopUrlScheme } from "@/lib/brand";
 import { CHROME_EXTENSION_BUTTON_CLASS } from "@/lib/chrome-extension";
 import { FREE_PLAN_MAX_RECORDING_MS } from "../components/web-recorder-dialog/web-recorder-constants";
 import { WebRecorderDialog } from "../components/web-recorder-dialog/web-recorder-dialog";
@@ -26,7 +27,7 @@ export const RecordVideoPage = () => {
 		window.addEventListener("pagehide", onChange, { once: true });
 		window.addEventListener("blur", onChange, { once: true });
 
-		window.location.href = "cap-desktop://";
+		window.location.href = `${desktopUrlScheme()}://`;
 
 		if (checkingRef.current) clearTimeout(checkingRef.current);
 		checkingRef.current = setTimeout(() => {

@@ -2952,11 +2952,7 @@ impl SettingsWindow {
         let auth = store::auth_snapshot();
         let Some(token) = auth.token else {
             // `protectedHeaders()`'s throw.
-            self.pages.feedback = FeedbackStatus::Error(
-                "Please sign in to continue. Alternatively, email hello@cap.so or join our \
-                 Discord at cap.link/discord"
-                    .to_string(),
-            );
+            self.pages.feedback = FeedbackStatus::Error("Please sign in to continue.".to_string());
             cx.notify();
             return;
         };
@@ -3686,7 +3682,7 @@ impl SettingsWindow {
                 ui::ButtonSize::Md,
             )
             .label("Join Discord")
-            .on_click(|_, _, cx| cx.open_url("https://cap.link/discord")),
+            .on_click(|_, _, cx| cx.open_url(crate::branding::SUPPORT_URL)),
         );
 
         // `commands.uploadLogs()`. The gpui app writes a rolling log file of
@@ -4087,7 +4083,7 @@ fn markdown_paragraphs(content: &str) -> Vec<MarkdownParagraph> {
 // ---------------------------------------------------------------------------
 
 /// `licenseApiClient`'s fixed base (`utils/web-api.ts:54-57`).
-const LICENSE_API_BASE: &str = "https://l.cap.so/api";
+const LICENSE_API_BASE: &str = crate::branding::LICENSE_API_BASE;
 
 impl SettingsWindow {
     /// `activateCommercialLicense`: key and instance id go as headers, and a
@@ -4198,7 +4194,7 @@ impl SettingsWindow {
                     .child(div().text_size(px(12.)).line_height(px(18.)).child("Desktop License · Commercial use of the desktop recorder and editor."))
                     .child(div().text_size(px(12.)).line_height(px(18.)).child("Cap Pro · A desktop license, plus cloud sharing, AI features and collaboration."))
                     .child(ui::Button::settings(&theme, "license-pricing", ui::ButtonVariant::Dark, ui::ButtonSize::Sm).label("View plans & pricing ↗").on_click(|_, _, cx| cx.open_url(crate::auth::PRICING_URL)))
-                    .child(div().text_size(px(12.)).text_color(theme.settings_muted()).child("Opens cap.so/pricing in your browser."))
+                    .child(div().text_size(px(12.)).text_color(theme.settings_muted()).child("Opens the pricing page in your browser."))
             ).into_any_element()]).into_any_element(),
         ];
         if !pro {
@@ -5118,10 +5114,7 @@ impl SettingsWindow {
                     .text_size(px(12.))
                     .line_height(px(18.))
                     .text_color(theme.settings_muted())
-                    .child(
-                        "Please sign in to continue. Alternatively, email hello@cap.so or join \
-                         our Discord at cap.link/discord",
-                    ),
+                    .child("Please sign in to continue."),
             )
             .into_any_element()
     }
@@ -5223,7 +5216,7 @@ impl SettingsWindow {
                             .underline()
                             .cursor_pointer()
                             .child("Storage Config Guide")
-                            .on_click(|_, _, cx| cx.open_url("https://cap.so/docs/s3-config")),
+                            .on_click(|_, _, cx| cx.open_url(crate::branding::DOCS_STORAGE_URL)),
                     )
                     .child("\u{a0}to get started."),
             );
