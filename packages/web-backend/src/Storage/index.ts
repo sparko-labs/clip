@@ -416,7 +416,7 @@ const copyS3ObjectForRecording = (
 		}
 	}).pipe(mapStorageError);
 
-const makeS3Access = (s3: S3BucketAccess) => ({
+export const makeS3Access = (s3: S3BucketAccess) => ({
 	provider: "s3" as const,
 	bucketName: s3.bucketName,
 	isPathStyle: s3.isPathStyle,
@@ -496,7 +496,7 @@ const makeS3Access = (s3: S3BucketAccess) => ({
 	multipart: makeS3MultipartAccess(s3),
 	createUploadTarget: (key: string, input: UploadTargetInput) =>
 		Effect.gen(function* () {
-			if (input.method === "put") {
+			if (input.method === "put" || serverEnv().S3_FORCE_PUT_UPLOADS) {
 				const url = yield* s3
 					.getPresignedPutUrl(
 						key,

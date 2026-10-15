@@ -31,6 +31,7 @@ jobs:
         run: >
           node --test
           scripts/ci/release-manifest.test.mjs
+          deploy/r2/setup.test.mjs
           scripts/bundle-gpui.test.mjs
           scripts/build-macos-packages.test.mjs
           scripts/finalize-macos-packages.test.mjs

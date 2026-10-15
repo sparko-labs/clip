@@ -120,6 +120,48 @@ Release named after the tag (`desktop-vX.Y.Z`). The web app's update route reads
 `DESKTOP_UPDATES_BASE_URL`, set to
 `https://github.com/sparko-labs/clip/releases/latest/download`.
 
+## Storage: Cloudflare R2
+
+Videos live in an R2 bucket. The bucket stays private: the app serves media
+through short-lived presigned URLs, unlike the MinIO setup upstream ships,
+which makes its bucket publicly readable.
+
+R2 does not accept presigned POST forms, so `S3_FORCE_PUT_UPLOADS=true` makes
+the server hand out presigned PUT targets (the web clients already handle
+them). The default S3 clients also set `requestChecksumCalculation` and
+`responseChecksumValidation` to `WHEN_REQUIRED`, which R2 needs with current AWS
+SDKs.
+
+Setup:
+
+1. In the Cloudflare dashboard, R2, Manage API tokens, create an Account API
+   token with Object Read & Write limited to the bucket `clip-videos`. Note the
+   access key ID and secret.
+2. Create the bucket and CORS rules with a token that may administer R2 (your
+   pipeline's `CLOUDFLARE_API_TOKEN`), and verify the whole flow:
+
+   ```
+   CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... \
+   WEB_ORIGINS=https://clip.sparkosol.co \
+   node deploy/r2/setup.mjs --write-env deploy/.env.r2
+   ```
+
+   The script creates the bucket if missing, sets CORS for the web origin
+   (including `ETag`, which multipart uploads need), uploads and downloads a
+   test object through presigned URLs, completes a multipart upload and checks
+   a browser CORS preflight. Re-run it with `R2_ACCESS_KEY_ID` and
+   `R2_SECRET_ACCESS_KEY` to verify the bucket-scoped token you will deploy.
+3. Merge `deploy/.env.r2` into `deploy/.env` on the server, using the scoped
+   token's key and secret.
+
+Presigned URLs only work on `<account>.r2.cloudflarestorage.com`, not on a
+custom domain, so no domain or Cloudflare zone is needed.
+
+Moving old videos to Infrequent Access can be done with an R2 object lifecycle
+rule (transition after N days) instead of a script. Infrequent Access has a
+30-day minimum storage duration and a per-GB retrieval fee, so only use it for
+videos nobody replays.
+
 ## Files changed in upstream code (keep this short)
 
 Auth: `packages/database/auth/{auth-options,domain-utils}.ts`,
@@ -132,6 +174,7 @@ Auth: `packages/database/auth/{auth-options,domain-utils}.ts`,
 `apps/web/lib/organization-provisioning.ts`,
 `apps/web/actions/organization/{send-invites,get-organization-sso-data}.ts`,
 `apps/web/app/api/webhooks/stripe/route.ts`, `apps/web/app/Layout/AppProviders.tsx`,
+`packages/web-backend/src/{Storage,S3Buckets}/index.ts` (R2 compatibility),
 `apps/web/utils/public-env.tsx`, `apps/web/app/s/[videoId]/_components/AuthOverlay.tsx`.
 
 Branding and trust: `apps/web/{utils/helpers.ts,utils/cors.ts,proxy.ts,next.config.mjs,Dockerfile}`,

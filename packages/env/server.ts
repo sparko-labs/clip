@@ -47,6 +47,9 @@ function createServerEnv() {
 				.describe(
 					"Internal endpoint for accessing S3. This is useful if accessing S3 over public internet is more expensive than via your hosting environment's local network.",
 				),
+			S3_FORCE_PUT_UPLOADS: boolString(false).describe(
+				"Hand out presigned PUT upload targets instead of presigned POST forms. Required for providers without POST policy uploads, such as Cloudflare R2.",
+			),
 			S3_PATH_STYLE: boolString(true).describe(
 				"Whether the bucket should be accessed using path-style URLs (common for non-AWS providers, eg. '/{bucket}/{key}') or virtual-hosted-style URLs (eg. '{bucket}.s3.amazonaws.com/{key}').",
 			),

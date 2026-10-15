@@ -44,6 +44,8 @@ export class S3Buckets extends Effect.Service<S3Buckets>()("S3Buckets", {
 				region: defaultConfigs.region,
 				credentials: defaultConfigs.credentials,
 				forcePathStyle: defaultConfigs.forcePathStyle,
+				requestChecksumCalculation: "WHEN_REQUIRED",
+				responseChecksumValidation: "WHEN_REQUIRED",
 				requestStreamBufferSize: 16 * 1024,
 				requestHandler,
 			});
