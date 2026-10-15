@@ -58,20 +58,24 @@ RUST_TARGET_TRIPLE="$TARGET" bun run cap-setup
 CARGO_PROFILE_RELEASE_DEBUG=0 CARGO_PROFILE_RELEASE_STRIP=symbols \
 	./scripts/build-desktop-binaries.sh "$TARGET"
 
-PIGZ_VERSION=2.8
-PIGZ_SHA256=eb872b4f0e1f0ebe59c9f7bd8c506c4204893ba6a8492de31df416f0d5170fd0
-PIGZ_DIR="${HOME}/.cap-ci/pigz-${PIGZ_VERSION}"
-if [[ ! -x "$PIGZ_DIR/pigz" ]]; then
-	mkdir -p "$PIGZ_DIR"
-	curl -fsSL --retry 3 -o "$PIGZ_DIR/pigz.tar.gz" "https://zlib.net/pigz/pigz-${PIGZ_VERSION}.tar.gz"
-	echo "${PIGZ_SHA256}  ${PIGZ_DIR}/pigz.tar.gz" | shasum -a 256 -c -
-	tar -xzf "$PIGZ_DIR/pigz.tar.gz" -C "$PIGZ_DIR" --strip-components=1
-	make -C "$PIGZ_DIR" CC=cc
+if [[ "$SIGN" == "true" ]]; then
+	PIGZ_VERSION=2.8
+	PIGZ_SHA256=eb872b4f0e1f0ebe59c9f7bd8c506c4204893ba6a8492de31df416f0d5170fd0
+	PIGZ_DIR="${HOME}/.cap-ci/pigz-${PIGZ_VERSION}"
+	if [[ ! -x "$PIGZ_DIR/pigz" ]]; then
+		mkdir -p "$PIGZ_DIR"
+		curl -fsSL --retry 3 -o "$PIGZ_DIR/pigz.tar.gz" "https://zlib.net/pigz/pigz-${PIGZ_VERSION}.tar.gz"
+		echo "${PIGZ_SHA256}  ${PIGZ_DIR}/pigz.tar.gz" | shasum -a 256 -c -
+		tar -xzf "$PIGZ_DIR/pigz.tar.gz" -C "$PIGZ_DIR" --strip-components=1
+		make -C "$PIGZ_DIR" CC=cc
+	fi
+	export PATH="$PIGZ_DIR:$PATH"
 fi
-export PATH="$PIGZ_DIR:$PATH"
 
 node scripts/bundle-gpui.mjs "$TARGET" --bundles app,dmg
-node scripts/finalize-macos-packages.mjs "$BUNDLE"
+if [[ "$SIGN" == "true" ]]; then
+	node scripts/finalize-macos-packages.mjs "$BUNDLE"
+fi
 
 APP="$(find "$BUNDLE/macos" -maxdepth 1 -name '*.app' -print -quit)"
 DMG="$(find "$BUNDLE/dmg" -maxdepth 1 -name '*.dmg' -print -quit)"

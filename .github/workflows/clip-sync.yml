@@ -1,0 +1,34 @@
+name: Clip upstream sync
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync upstream release
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require a token
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          if [ -z "$SYNC_TOKEN" ]; then
+            echo "::notice::Set the SYNC_TOKEN secret to enable upstream syncs."
+            exit 78
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.SYNC_TOKEN }}
+          ref: custom
+
+      - name: Sync
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: bash scripts/ci/sync-upstream.sh

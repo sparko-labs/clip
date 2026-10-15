@@ -1,0 +1,37 @@
+name: Clip checks
+
+on:
+  push:
+    branches: [custom]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: clip-check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    name: Web checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-js
+      - name: Format
+        run: bun run biome ci . --linter-enabled=false
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Web unit tests
+        run: bun run --cwd apps/web vitest run __tests__/unit
+      - name: Build script tests
+        run: >
+          node --test
+          scripts/ci/release-manifest.test.mjs
+          scripts/bundle-gpui.test.mjs
+          scripts/build-macos-packages.test.mjs
+          scripts/finalize-macos-packages.test.mjs
+          scripts/prepare-gpui-dependency.test.mjs

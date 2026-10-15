@@ -1,9 +1,13 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { buildManifest, objectKey, publish } from "./publish-release.mjs";
+import {
+	buildManifest,
+	githubReleaseUrl,
+	stageRelease,
+} from "./release-manifest.mjs";
 
 async function fixture(layout) {
 	const root = await mkdtemp(path.join(tmpdir(), "release-assets-"));
@@ -15,18 +19,16 @@ async function fixture(layout) {
 	return root;
 }
 
-const common = {
-	version: "0.6.2",
-	baseUrl: "https://updates.example/cap/",
-	prefix: "desktop",
-};
+const urlFor = githubReleaseUrl({
+	repository: "SparkoSol/clip",
+	tag: "desktop-v0.6.2",
+});
 
-test("object keys skip empty segments", () => {
+test("release urls point at the tag's assets", () => {
 	assert.equal(
-		objectKey("/desktop/", "0.6.2", "darwin-aarch64", "App.app.tar.gz"),
-		"desktop/0.6.2/darwin-aarch64/App.app.tar.gz",
+		urlFor({ file: "ClipSpark_0.6.2_x64-setup.exe" }),
+		"https://github.com/SparkoSol/clip/releases/download/desktop-v0.6.2/ClipSpark_0.6.2_x64-setup.exe",
 	);
-	assert.equal(objectKey("", "0.6.2", "p", "f"), "0.6.2/p/f");
 });
 
 test("the manifest lists one signed artifact per updater platform", async () => {
@@ -38,8 +40,9 @@ test("the manifest lists one signed artifact per updater platform", async () => 
 		"dmg/App.dmg": "dmg",
 	});
 	const manifest = await buildManifest({
-		...common,
 		assetsDirectory,
+		version: "0.6.2",
+		urlFor,
 		notes: "Fixes",
 	});
 	assert.deepEqual(manifest, {
@@ -47,11 +50,11 @@ test("the manifest lists one signed artifact per updater platform", async () => 
 		notes: "Fixes",
 		platforms: {
 			"darwin-aarch64": {
-				url: "https://updates.example/cap/desktop/0.6.2/darwin-aarch64/App.app.tar.gz",
+				url: "https://github.com/SparkoSol/clip/releases/download/desktop-v0.6.2/App.app.tar.gz",
 				signature: "sig-mac",
 			},
 			"windows-x86_64": {
-				url: "https://updates.example/cap/desktop/0.6.2/windows-x86_64/App_0.6.2_x64-setup.exe",
+				url: "https://github.com/SparkoSol/clip/releases/download/desktop-v0.6.2/App_0.6.2_x64-setup.exe",
 				signature: "sig-win",
 			},
 		},
@@ -63,7 +66,7 @@ test("a missing signature refuses to publish", async () => {
 		"darwin-aarch64/App.app.tar.gz": "tar",
 	});
 	await assert.rejects(
-		buildManifest({ ...common, assetsDirectory }),
+		buildManifest({ assetsDirectory, version: "0.6.2", urlFor }),
 		/missing or empty/,
 	);
 });
@@ -76,7 +79,7 @@ test("an ambiguous platform directory refuses to publish", async () => {
 		"windows-x86_64/b-setup.exe.sig": "s",
 	});
 	await assert.rejects(
-		buildManifest({ ...common, assetsDirectory }),
+		buildManifest({ assetsDirectory, version: "0.6.2", urlFor }),
 		/exactly one updater artifact/,
 	);
 });
@@ -88,51 +91,57 @@ test("only https urls and semver versions are accepted", async () => {
 	});
 	await assert.rejects(
 		buildManifest({
-			...common,
 			assetsDirectory,
-			baseUrl: "http://updates.example",
+			version: "0.6.2",
+			urlFor: ({ file }) => `http://example.test/${file}`,
 		}),
-		/https/,
+		/must be https/,
 	);
 	await assert.rejects(
-		buildManifest({ ...common, assetsDirectory, version: "latest" }),
+		buildManifest({ assetsDirectory, version: "latest", urlFor }),
 		/semver/,
 	);
 });
 
-test("publishing uploads every asset before the manifest", async () => {
+test("staging flattens assets beside the manifest", async () => {
 	const assetsDirectory = await fixture({
 		"darwin-aarch64/App.app.tar.gz": "tar",
 		"darwin-aarch64/App.app.tar.gz.sig": "s",
 		"dmg/App.dmg": "dmg",
 	});
-	const sent = [];
-	const client = { send: async (command) => sent.push(command.input) };
-	await publish({
-		...common,
+	const outputDirectory = await mkdtemp(path.join(tmpdir(), "release-out-"));
+	await stageRelease({
 		assetsDirectory,
-		client,
-		bucket: "updates",
+		outputDirectory,
+		version: "0.6.2",
+		urlFor,
 	});
-	const keys = sent.map((input) => input.Key);
-	assert.equal(keys.at(-1), "desktop/manifest.json");
-	assert.ok(keys.includes("desktop/0.6.2/dmg/App.dmg"));
-	assert.ok(keys.includes("desktop/0.6.2/darwin-aarch64/App.app.tar.gz"));
-	assert.ok(sent.every((input) => input.Bucket === "updates"));
+	assert.deepEqual((await readdir(outputDirectory)).sort(), [
+		"App.app.tar.gz",
+		"App.app.tar.gz.sig",
+		"App.dmg",
+		"manifest.json",
+	]);
+	const manifest = JSON.parse(
+		await readFile(path.join(outputDirectory, "manifest.json"), "utf8"),
+	);
+	assert.equal(manifest.version, "0.6.2");
 });
 
-test("nightly publishes a separate manifest", async () => {
+test("duplicate asset names across platforms refuse to stage", async () => {
 	const assetsDirectory = await fixture({
-		"linux-x86_64-deb/cap.deb": "deb",
-		"linux-x86_64-deb/cap.deb.sig": "s",
+		"darwin-aarch64/App.app.tar.gz": "tar",
+		"darwin-aarch64/App.app.tar.gz.sig": "s",
+		"dmg/App.app.tar.gz": "dup",
 	});
-	const sent = [];
-	await publish({
-		...common,
-		assetsDirectory,
-		channel: "nightly",
-		client: { send: async (command) => sent.push(command.input) },
-		bucket: "updates",
-	});
-	assert.equal(sent.at(-1).Key, "desktop/manifest-nightly.json");
+	const outputDirectory = await mkdtemp(path.join(tmpdir(), "release-out-"));
+	await assert.rejects(
+		stageRelease({
+			assetsDirectory,
+			outputDirectory,
+			version: "0.6.2",
+			urlFor,
+		}),
+		/appears in/,
+	);
 });
