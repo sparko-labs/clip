@@ -68,10 +68,14 @@ def main():
             continue
         parts = repo["name"].split("/")
         repository, location = parts[-1], parts[parts.index("locations") + 1]
-        packages = gcloud_json(
-            "artifacts", "packages", "list",
-            f"--repository={repository}", f"--location={location}", f"--project={project}",
-        )
+        try:
+            packages = gcloud_json(
+                "artifacts", "packages", "list",
+                f"--repository={repository}", f"--location={location}", f"--project={project}",
+            )
+        except subprocess.CalledProcessError:
+            print(f"EMPTY  {location}/{repository}: no packages")
+            continue
         for package_resource in packages:
             package = package_resource["name"].split("/packages/")[-1]
             base = [
@@ -92,7 +96,18 @@ def main():
             versions = gcloud_json("artifacts", "versions", "list", *base)
             doomed = [v for v in versions if v["name"].split("/")[-1] not in keep]
             print(f"PLAN   {label}: keep {len(keep)} (latest + references), delete {len(doomed)}")
-            for version in sorted(doomed, key=lambda v: v["createTime"]):
+            def is_index(version):
+                digest = version["name"].split("/")[-1]
+                try:
+                    document = manifest(token, location, project, repository, package, digest)
+                except Exception:
+                    return False
+                return "manifests" in document
+
+            ordered = sorted(
+                doomed, key=lambda v: (not is_index(v), v["createTime"])
+            )
+            for version in ordered:
                 digest = version["name"].split("/")[-1]
                 tag_names = [t["name"].split("/")[-1] for t in version.get("relatedTags", [])]
                 print(f"         - {digest[:19]} {version['createTime'][:19]} tags={tag_names}")
@@ -101,12 +116,22 @@ def main():
     if not apply:
         print("\nPlan only. Re-run with --apply to delete.")
         return
+    failed = 0
     for digest, base in deletions:
-        gcloud(
-            "artifacts", "versions", "delete", digest, *base,
-            "--delete-tags", "--quiet",
+        result = subprocess.run(
+            [
+                "gcloud", "artifacts", "versions", "delete", digest, *base,
+                "--delete-tags", "--quiet",
+            ],
+            capture_output=True, text=True,
         )
-        print(f"DELETED {digest[:19]}")
+        if result.returncode == 0:
+            print(f"DELETED {digest[:19]}")
+        else:
+            failed += 1
+            print(f"FAILED  {digest[:19]}: {result.stderr.strip().splitlines()[-1]}")
+    if failed:
+        sys.exit(f"{failed} deletion(s) failed")
 
 
 if __name__ == "__main__":
