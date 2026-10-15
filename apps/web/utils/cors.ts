@@ -7,10 +7,14 @@ export const allowedOrigins = [
 	"tauri://localhost",
 	"http://tauri.localhost",
 	"https://tauri.localhost",
-	"https://cap.so",
-	"https://www.cap.so",
-	"https://cap.link",
-	"https://www.cap.link",
+	...(process.env.AUTH_MODE === "oidc"
+		? []
+		: [
+				"https://cap.so",
+				"https://www.cap.so",
+				"https://cap.link",
+				"https://www.cap.link",
+			]),
 ];
 
 export function getCorsHeaders(origin: string | null, originalOrigin: string) {

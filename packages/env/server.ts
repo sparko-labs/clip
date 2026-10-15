@@ -104,6 +104,12 @@ function createServerEnv() {
 				.describe(
 					"Comma-separated email domains admitted in oidc mode. Required there; empty refuses everyone",
 				),
+			DESKTOP_UPDATES_BASE_URL: z
+				.string()
+				.optional()
+				.describe(
+					"HTTPS base URL holding manifest.json and the desktop installers served to the updater",
+				),
 			SCIM_BEARER_TOKEN: z
 				.string()
 				.optional()

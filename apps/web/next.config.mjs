@@ -98,14 +98,18 @@ const nextConfig = {
 	},
 	async rewrites() {
 		return [
-			{
-				source: "/r/:path*",
-				destination: "https://dub.cap.link/:path*",
-			},
-			{
-				source: "/api/commercial/:path*",
-				destination: "https://l.cap.so/api/commercial/:path*",
-			},
+			...(process.env.NEXT_PUBLIC_IS_CAP
+				? [
+						{
+							source: "/r/:path*",
+							destination: "https://dub.cap.link/:path*",
+						},
+						{
+							source: "/api/commercial/:path*",
+							destination: "https://l.cap.so/api/commercial/:path*",
+						},
+					]
+				: []),
 			{
 				source: "/s/:videoId",
 				destination: "/s/:videoId",

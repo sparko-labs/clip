@@ -34,7 +34,9 @@ export async function proxy(request: NextRequest) {
 		response.headers.set("X-Frame-Options", "SAMEORIGIN");
 		response.headers.set(
 			"Content-Security-Policy",
-			"frame-ancestors https://cap.so",
+			serverEnv().AUTH_MODE === "oidc"
+				? "frame-ancestors 'self'"
+				: "frame-ancestors https://cap.so",
 		);
 		return response;
 	}

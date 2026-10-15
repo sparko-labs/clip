@@ -27,9 +27,11 @@ function isTrustedCredentialedOrigin(origin: string) {
 		return false;
 	}
 
-	if (host === "localhost" || host === "cap.so" || host === "cap.link")
-		return true;
-	if (host.endsWith(".cap.so")) return true;
+	if (host === "localhost") return true;
+	if (serverEnv().AUTH_MODE !== "oidc") {
+		if (host === "cap.so" || host === "cap.link") return true;
+		if (host.endsWith(".cap.so")) return true;
+	}
 
 	try {
 		if (host === new URL(serverEnv().WEB_URL).hostname) return true;
