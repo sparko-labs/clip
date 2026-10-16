@@ -104,15 +104,18 @@ export function bundleArguments(target, args) {
 	return ["tauri", "bundle", "--target", target, ...args];
 }
 
-export function bundleEnvironment(env) {
+export function brandConfigArguments(env = process.env) {
 	const brand = brandConfig(env);
+	return Object.keys(brand).length > 0
+		? ["--config", JSON.stringify(brand)]
+		: [];
+}
+
+export function bundleEnvironment(env) {
 	return {
 		...env,
 		TAURI_APP_PATH: gpuiDirectory,
 		RUSTUP_TOOLCHAIN: gpuiToolchain,
-		...(Object.keys(brand).length > 0
-			? { TAURI_CONFIG: JSON.stringify(brand) }
-			: {}),
 	};
 }
 
@@ -175,8 +178,13 @@ export function parseOptions(args) {
 }
 
 export async function bundleGpui(target, args, { env = process.env } = {}) {
-	const { skipBuild, noBundle, bundleArgs } = parseOptions(args);
-	const platform = validate(target, bundleArgs);
+	const {
+		skipBuild,
+		noBundle,
+		bundleArgs: requestedBundleArgs,
+	} = parseOptions(args);
+	const platform = validate(target, requestedBundleArgs);
+	const bundleArgs = [...requestedBundleArgs, ...brandConfigArguments(env)];
 
 	if (!skipBuild) {
 		run("bash", [

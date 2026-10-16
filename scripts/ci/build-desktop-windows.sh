@@ -50,7 +50,7 @@ fi
 rm -f "${INSTALLER}.sig"
 (cd apps/desktop && bun run tauri signer sign \
 	-k "$TAURI_SIGNING_PRIVATE_KEY" -p "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" \
-	"$(cd .. && cd .. && pwd)/${INSTALLER}")
+	"../../${INSTALLER}")
 [[ -s "${INSTALLER}.sig" ]]
 
 PLATFORM="windows-${TARGET%%-*}"

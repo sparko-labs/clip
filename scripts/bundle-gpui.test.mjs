@@ -4,6 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import {
 	brandConfig,
+	brandConfigArguments,
 	bundleArguments,
 	bundleEnvironment,
 	gpuiBinaryPath,
@@ -198,9 +199,9 @@ test("brand variables overlay the packaging identity without touching the base c
 			"deep-link": { desktop: { schemes: ["acme-recorder"] } },
 		},
 	});
-	assert.deepEqual(
-		JSON.parse(bundleEnvironment(env).TAURI_CONFIG),
-		brandConfig(env),
-	);
-	assert.equal("TAURI_CONFIG" in bundleEnvironment({ PATH: "/bin" }), false);
+	const [flag, json] = brandConfigArguments(env);
+	assert.equal(flag, "--config");
+	assert.deepEqual(JSON.parse(json), brandConfig(env));
+	assert.deepEqual(brandConfigArguments({}), []);
+	assert.equal("TAURI_CONFIG" in bundleEnvironment(env), false);
 });
