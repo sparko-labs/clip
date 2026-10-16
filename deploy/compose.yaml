@@ -1,0 +1,76 @@
+name: clip
+
+services:
+  web:
+    image: ${CLIP_WEB_IMAGE:?Pin an immutable digest before deploying}
+    container_name: clip-web
+    restart: unless-stopped
+    env_file: ${CLIP_ENV_DIR:-/etc/apps}/clip.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      edge:
+        aliases: [clip-web]
+      internal:
+        aliases: [web]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "10" }
+
+  media-server:
+    image: ${CLIP_MEDIA_IMAGE:?Pin an immutable digest before deploying}
+    container_name: clip-media-server
+    restart: unless-stopped
+    env_file: ${CLIP_ENV_DIR:-/etc/apps}/clip-media.env
+    networks:
+      internal:
+        aliases: [media-server]
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://127.0.0.1:3456/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "10" }
+
+  mysql:
+    image: mysql:8.0
+    container_name: clip-mysql
+    restart: unless-stopped
+    env_file: ${CLIP_ENV_DIR:-/etc/apps}/clip-db.env
+    command:
+      - --max_connections=200
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      internal:
+        aliases: [mysql]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "10" }
+
+volumes:
+  mysql-data:
+
+networks:
+  edge:
+    external: true
+  internal:

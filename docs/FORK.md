@@ -8,7 +8,9 @@ directory. Everything else is upstream.
   after the first sync).
 - Branches: `main` mirrors upstream (fast-forward only). `custom` holds our
   patches. Sync branches are `sync/<tag>`.
-- Upgrade procedure: `docs/UPGRADING.md`. Deployment: `deploy/`.
+- Upgrade procedure: `docs/UPGRADING.md`. Deployment: `deploy/compose.yaml` with the
+  env examples in `deploy/env/` (Caddy on the shared `edge` network, images
+  pinned by digest, MySQL in its own container).
 - Hosted on GitHub (`sparko-labs/clip`). CI is GitHub Actions: `.github/workflows/clip-*.yml`.
 
 ## How sign-in is restricted
@@ -151,8 +153,8 @@ Setup:
    test object through presigned URLs, completes a multipart upload and checks
    a browser CORS preflight. Re-run it with `R2_ACCESS_KEY_ID` and
    `R2_SECRET_ACCESS_KEY` to verify the bucket-scoped token you will deploy.
-3. Merge `deploy/.env.r2` into `deploy/.env` on the server, using the scoped
-   token's key and secret.
+3. Copy the values from `deploy/.env.r2` into `/etc/apps/clip.env` on the
+   server, using the scoped token's key and secret.
 
 Presigned URLs only work on `<account>.r2.cloudflarestorage.com`, not on a
 custom domain, so no domain or Cloudflare zone is needed.
