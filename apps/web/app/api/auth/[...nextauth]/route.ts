@@ -81,6 +81,7 @@ async function handler(
 	if (
 		isOidcMode() &&
 		(nextauth[0] === "signin" || nextauth[0] === "callback") &&
+		nextauth[1] !== undefined &&
 		nextauth[1] !== OIDC_PROVIDER_ID
 	) {
 		return new NextResponse(null, { status: 404 });

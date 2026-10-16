@@ -14,6 +14,15 @@ export type OidcProfile = {
 	picture?: string;
 };
 
+type TokenSetWithClaims = {
+	access_token?: string;
+	claims(): Record<string, unknown>;
+};
+
+type UserinfoClient = {
+	userinfo(accessToken: string): Promise<Record<string, unknown>>;
+};
+
 export function oidcProvider(): OAuthConfig<OidcProfile> {
 	const env = serverEnv();
 	const { OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET } = env;
@@ -31,7 +40,24 @@ export function oidcProvider(): OAuthConfig<OidcProfile> {
 		issuer,
 		wellKnown: `${issuer}/.well-known/openid-configuration`,
 		authorization: { params: { scope: env.OIDC_SCOPES } },
-		idToken: false,
+		idToken: true,
+		userinfo: {
+			async request(context) {
+				const { tokens, client } = context as unknown as {
+					tokens: TokenSetWithClaims;
+					client: UserinfoClient;
+				};
+				if (!tokens.access_token) {
+					throw new Error("The identity provider returned no access token");
+				}
+				const claims = tokens.claims();
+				const info = await client.userinfo(tokens.access_token);
+				if (info.sub !== claims.sub) {
+					throw new Error("The userinfo subject does not match the ID token");
+				}
+				return { ...claims, ...info } as OidcProfile;
+			},
+		},
 		checks: ["pkce", "state"],
 		clientId: OIDC_CLIENT_ID,
 		clientSecret: OIDC_CLIENT_SECRET,

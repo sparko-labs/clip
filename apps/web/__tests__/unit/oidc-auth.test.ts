@@ -121,7 +121,7 @@ describe("oidc mode", () => {
 				"https://idp.example/realms/main/.well-known/openid-configuration",
 			);
 			expect(provider.issuer).toBe("https://idp.example/realms/main");
-			expect(provider.idToken).toBe(false);
+			expect(provider.idToken).toBe(true);
 			expect(provider.checks).toEqual(["pkce", "state"]);
 			expect(provider.allowDangerousEmailAccountLinking).toBe(false);
 		});
@@ -141,6 +141,49 @@ describe("oidc mode", () => {
 				expect.arrayContaining(["apple", "google", "workos", "email"]),
 			);
 			expect(ids).not.toContain("oidc");
+		});
+	});
+
+	describe("userinfo", () => {
+		const request = (tokens: unknown, client: unknown) => {
+			const provider = authOptions().providers[0] as unknown as {
+				userinfo: { request: (context: unknown) => Promise<unknown> };
+			};
+			return provider.userinfo.request({ tokens, client });
+		};
+
+		it("merges userinfo claims over the ID token claims", async () => {
+			const userinfo = vi.fn().mockResolvedValue({
+				sub: "sub-1",
+				email: "alex@company.example",
+				email_verified: true,
+			});
+			const result = await request(
+				{ access_token: "at", claims: () => ({ sub: "sub-1", sid: "s" }) },
+				{ userinfo },
+			);
+			expect(userinfo).toHaveBeenCalledWith("at");
+			expect(result).toEqual({
+				sub: "sub-1",
+				sid: "s",
+				email: "alex@company.example",
+				email_verified: true,
+			});
+		});
+
+		it("rejects a userinfo response for a different subject", async () => {
+			await expect(
+				request(
+					{ access_token: "at", claims: () => ({ sub: "sub-1" }) },
+					{ userinfo: async () => ({ sub: "someone-else", email: "x@y.z" }) },
+				),
+			).rejects.toThrow(/subject does not match/);
+		});
+
+		it("requires an access token", async () => {
+			await expect(
+				request({ claims: () => ({ sub: "sub-1" }) }, { userinfo: vi.fn() }),
+			).rejects.toThrow(/no access token/);
 		});
 	});
 
@@ -329,6 +372,19 @@ describe("oidc mode", () => {
 			const response = await call(action, provider, method);
 			expect(response.status).toBe(404);
 			expect(state.nextAuth).not.toHaveBeenCalled();
+		});
+
+		it("lets next-auth's own error redirect to the sign-in page through", async () => {
+			state.nextAuth.mockResolvedValue(new Response(null, { status: 302 }));
+			const { GET } = await import("@/app/api/auth/[...nextauth]/route");
+			const response = await GET(
+				new NextRequest(
+					new URL("/api/auth/signin?error=OAuthCallback", env.WEB_URL),
+				),
+				{ params: Promise.resolve({ nextauth: ["signin"] }) },
+			);
+			expect(response.status).toBe(302);
+			expect(state.nextAuth).toHaveBeenCalledTimes(1);
 		});
 
 		it("lets the oidc provider through to next-auth", async () => {
