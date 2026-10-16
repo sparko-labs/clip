@@ -45,9 +45,12 @@ any client, so a modified client gains nothing.
   `openid profile email`.
 - Require user assignment in the IdP application. The app-side allowlist is a
   second line of defence, not the only one.
-- The IdP must send `email` and `email_verified: true` in the ID token. Entra ID
-  omits `email_verified` by default; add it with an optional claim or a claims
-  mapping policy or sign-in will be refused with `OidcEmailUnverified`.
+- The IdP must return `email` and `email_verified: true` from its userinfo
+  endpoint. The app reads userinfo rather than the ID token because some
+  providers (Better Auth's OAuth provider) never put those claims in the ID
+  token. Entra ID omits `email_verified` by default; add it with an optional
+  claim or a claims mapping policy or sign-in will be refused with
+  `OidcEmailUnverified`.
 - SCIM: point the IdP's provisioning at `${WEB_URL}/api/scim/v2` with
   `SCIM_BEARER_TOKEN`. Only `active` changes and deletes have an effect; users
   are created on first sign-in.

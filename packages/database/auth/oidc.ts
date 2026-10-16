@@ -31,7 +31,7 @@ export function oidcProvider(): OAuthConfig<OidcProfile> {
 		issuer,
 		wellKnown: `${issuer}/.well-known/openid-configuration`,
 		authorization: { params: { scope: env.OIDC_SCOPES } },
-		idToken: true,
+		idToken: false,
 		checks: ["pkce", "state"],
 		clientId: OIDC_CLIENT_ID,
 		clientSecret: OIDC_CLIENT_SECRET,

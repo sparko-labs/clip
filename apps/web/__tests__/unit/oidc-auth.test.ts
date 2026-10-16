@@ -121,7 +121,7 @@ describe("oidc mode", () => {
 				"https://idp.example/realms/main/.well-known/openid-configuration",
 			);
 			expect(provider.issuer).toBe("https://idp.example/realms/main");
-			expect(provider.idToken).toBe(true);
+			expect(provider.idToken).toBe(false);
 			expect(provider.checks).toEqual(["pkce", "state"]);
 			expect(provider.allowDangerousEmailAccountLinking).toBe(false);
 		});
